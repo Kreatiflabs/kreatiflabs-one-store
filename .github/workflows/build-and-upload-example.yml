@@ -1,0 +1,105 @@
+name: Build Mobile App & Publish to Kreatiflabs One Store
+
+on:
+  push:
+    tags:
+      - 'v*' # Trigger saat tag rilis di-push (misal: v1.0.0, v1.2.1)
+  workflow_dispatch: # Atau trigger manual dari tab Actions di GitHub
+    inputs:
+      version:
+        description: 'Nomor versi (misal: 1.0.0)'
+        required: true
+        default: '1.0.0'
+      platform:
+        description: 'Platform build'
+        required: true
+        default: 'android'
+        type: choice
+        options:
+          - android
+          - ios
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # Contoh build Flutter (sesuaikan jika project React Native atau Native Android)
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Determine Version
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          else
+            # Ambil dari git tag (hapus huruf 'v')
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+            echo "VERSION=${TAG_NAME#v}" >> $GITHUB_ENV
+          fi
+
+      - name: Build Android APK Release
+        run: |
+          flutter build apk --release --build-name=${{ env.VERSION }} --build-number=${{ github.run_number }}
+
+      # -------------------------------------------------------------
+      # UPLOAD KE CLOUDFLARE R2 VIA S3 CLI
+      # -------------------------------------------------------------
+      - name: Setup AWS CLI for Cloudflare R2
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.R2_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          aws configure set default.region auto
+
+      - name: Upload APK to Cloudflare R2
+        run: |
+          APP_SLUG="my-awesome-app" # <-- Sesuaikan slug aplikasi kamu
+          R2_KEY="releases/${APP_SLUG}/v${{ env.VERSION }}/app-release.apk"
+          
+          # Upload ke R2 endpoint
+          aws s3 cp build/app/outputs/flutter-apk/app-release.apk \
+            s3://${{ secrets.R2_BUCKET_NAME }}/${R2_KEY} \
+            --endpoint-url https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+
+          FILE_SIZE=$(stat -c%s build/app/outputs/flutter-apk/app-release.apk)
+          DOWNLOAD_URL="${{ secrets.R2_PUBLIC_URL }}/${R2_KEY}"
+
+          echo "FILE_SIZE=${FILE_SIZE}" >> $GITHUB_ENV
+          echo "DOWNLOAD_URL=${DOWNLOAD_URL}" >> $GITHUB_ENV
+          echo "APP_SLUG=${APP_SLUG}" >> $GITHUB_ENV
+
+      # -------------------------------------------------------------
+      # NOTIFIKASI KE KREATIFLABS ONE STORE WEBHOOK
+      # -------------------------------------------------------------
+      - name: Notify Kreatiflabs One Store API
+        run: |
+          curl -X POST "${{ secrets.ONE_STORE_URL }}/api/webhook/release" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.RELEASE_WEBHOOK_SECRET }}" \
+            -d '{
+              "app_slug": "'"${{ env.APP_SLUG }}"'",
+              "platform": "android",
+              "version": "'"${{ env.VERSION }}"'",
+              "build_number": '"${{ github.run_number }}"',
+              "download_url": "'"${{ env.DOWNLOAD_URL }}"'",
+              "file_size_bytes": '"${{ env.FILE_SIZE }}"',
+              "changelog": "Otomatis di-build oleh GitHub Actions #${{ github.run_number }}",
+              "auto_publish": false
+            }'

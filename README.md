@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 Kreatiflabs One Store
 
-## Getting Started
+Platform distribusi aplikasi mobile (APK Android & iOS) internal dan publik untuk ekosistem **Kreatiflabs**.
 
-First, run the development server:
+Didesain untuk beroperasi **100% GRATIS** tanpa biaya server maupun bandwidth:
+* **Hosting Frontend & API**: [Vercel](https://vercel.com) (Free Tier)
+* **Storage Binari (APK/IPA) & Screenshots**: [Cloudflare R2](https://developers.cloudflare.com/r2/) (10 GB Free Storage + **0 Bandwidth/Egress Fee**)
+* **Database Metadata**: [Cloudflare D1](https://developers.cloudflare.com/d1/) (5 GB Free Storage, 5 Juta Reads/Hari) atau SQLite lokal saat development.
+* **CI/CD Build**: GitHub Actions (otomatis upload APK ke R2 & trigger webhook).
 
+---
+
+## 🏗️ Alur Kerja (Architecture)
+
+1. **GitHub Actions**: Menjalankan build Android APK / iOS IPA.
+2. **Cloudflare R2**: File APK/IPA di-upload via S3 API ke R2 (`s3://bucket/releases/app-name/v1.0.0/app-release.apk`).
+3. **Webhook Trigger**: GitHub Actions mengirim HTTP POST ke `/api/webhook/release`.
+4. **Halaman Admin (`/admin`)**:
+   * Melihat build baru yang masuk (status *Draft*).
+   * Upload screenshot langsung dari browser ke Cloudflare R2 via *Presigned URL*.
+   * Mengatur ikon aplikasi, deskripsi, changelog, dan kategori.
+   * Mengubah status menjadi **Published**.
+5. **Halaman Publik (`/`)**: Pengguna mengunduh APK atau menginstal iOS langsung dengan kecepatan CDN Cloudflare.
+
+---
+
+## 🛠️ Setup & Menjalankan Lokal
+
+### 1. Install Dependensi
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Environment Variables
+Salin file `.env.example` menjadi `.env.local`:
+```bash
+cp .env.example .env.local
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Isi variabel Cloudflare kamu:
+```env
+# Cloudflare D1
+CLOUDFLARE_ACCOUNT_ID="your_account_id"
+CLOUDFLARE_D1_DATABASE_ID="your_d1_database_uuid"
+CLOUDFLARE_API_TOKEN="your_token"
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Cloudflare R2
+R2_ACCESS_KEY_ID="your_r2_access_key"
+R2_SECRET_ACCESS_KEY="your_r2_secret_key"
+R2_BUCKET_NAME="kreatiflabs-one-store"
+R2_PUBLIC_URL="https://cdn.kreatiflabs.com"
 
-## Learn More
+# Webhook Secret
+RELEASE_WEBHOOK_SECRET="rahasia-webhook-kamu"
+```
 
-To learn more about Next.js, take a look at the following resources:
+> **Catatan saat Development Lokal:** Jika `CLOUDFLARE_D1_DATABASE_ID` belum diisi, aplikasi otomatis menggunakan SQLite lokal (`file:kreatiflabs.db`) tanpa error!
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Jalankan Server Dev
+```bash
+pnpm dev
+```
+Buka [http://localhost:3000](http://localhost:3000) untuk melihat storefront, atau [http://localhost:3000/admin](http://localhost:3000/admin) untuk dashboard admin.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## ☁️ Menyiapkan Cloudflare D1 & R2
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 1. Buat Bucket R2 (Storage File & Screenshots)
+1. Buka **Cloudflare Dashboard** $\rightarrow$ **R2 Object Storage** $\rightarrow$ **Create bucket**.
+2. Beri nama bucket, misal: `kreatiflabs-one-store`.
+3. Klik **Settings** $\rightarrow$ **Public Access** $\rightarrow$ Hubungkan ke Custom Domain (misal `cdn.kreatiflabs.com`) atau aktifkan `r2.dev subdomain`.
+4. Buat **R2 API Token** (Permissions: *Object Read & Write*). Simpan Access Key ID dan Secret Access Key.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 2. Buat Database D1
+1. Buka **Cloudflare Dashboard** $\rightarrow$ **Storage & Databases** $\rightarrow$ **D1 SQL Database** $\rightarrow$ **Create database**.
+2. Beri nama database, misal: `kreatiflabs-one-store-db`.
+3. Salin **Database ID** ke env `CLOUDFLARE_D1_DATABASE_ID`.
+4. Buat **API Token** Cloudflare dengan izin: `D1:Edit`.
+
+---
+
+## 🤖 GitHub Actions Workflow
+
+Template workflow siap pakai tersedia di:
+[`.github/workflows/build-and-upload-example.yml`](.github/workflows/build-and-upload-example.yml)
+
+Cukup salin file tersebut ke repository aplikasi mobile kamu dan tambahkan secrets di GitHub Repository (`Settings` $\rightarrow$ `Secrets and variables` $\rightarrow$ `Actions`):
+* `CLOUDFLARE_ACCOUNT_ID`
+* `R2_ACCESS_KEY_ID`
+* `R2_SECRET_ACCESS_KEY`
+* `R2_BUCKET_NAME`
+* `R2_PUBLIC_URL`
+* `ONE_STORE_URL` (URL deploy Vercel kamu, misal `https://store.kreatiflabs.com`)
+* `RELEASE_WEBHOOK_SECRET`

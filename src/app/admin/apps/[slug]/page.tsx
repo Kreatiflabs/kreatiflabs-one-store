@@ -1,0 +1,638 @@
+"use client";
+
+import { useEffect, useState, Suspense } from "react";
+import Link from "next/link";
+import { useRouter, useParams } from "next/navigation";
+import { AdminAuthGuard } from "@/components/AdminAuthGuard";
+import {
+  ArrowLeft,
+  Upload,
+  Trash2,
+  Check,
+  Smartphone,
+  Apple,
+  ExternalLink,
+  Layers,
+  Image as ImageIcon,
+  Save,
+  CheckCircle,
+} from "lucide-react";
+
+interface AppDetail {
+  id: string;
+  slug: string;
+  name: string;
+  icon_url: string;
+  category: string;
+  short_desc: string;
+  description: string;
+  author: string;
+  is_published: number;
+}
+
+interface ReleaseItem {
+  id: string;
+  app_slug: string;
+  platform: "android" | "ios";
+  version: string;
+  build_number: number;
+  download_url: string;
+  manifest_url: string;
+  changelog: string;
+  file_size_bytes: number;
+  status: "draft" | "published";
+  created_at: string;
+}
+
+interface ScreenshotItem {
+  id: string;
+  app_slug: string;
+  image_url: string;
+  caption: string;
+  order_index: number;
+}
+
+function AdminAppDetailContent() {
+  const params = useParams();
+  const slug = params?.slug as string;
+  const router = useRouter();
+
+  const [app, setApp] = useState<AppDetail | null>(null);
+  const [releases, setReleases] = useState<ReleaseItem[]>([]);
+  const [screenshots, setScreenshots] = useState<ScreenshotItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Upload states
+  const [uploadingIcon, setUploadingIcon] = useState(false);
+  const [uploadingScreenshots, setUploadingScreenshots] = useState(false);
+
+  // Form states
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("Tools");
+  const [author, setAuthor] = useState("Kreatiflabs");
+  const [shortDesc, setShortDesc] = useState("");
+  const [description, setDescription] = useState("");
+  const [isPublished, setIsPublished] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/apps/${slug}?include_drafts=true`);
+      if (!res.ok) throw new Error("Gagal mengambil data aplikasi");
+      const data = await res.json();
+
+      setApp(data.app);
+      setReleases(data.releases || []);
+      setScreenshots(data.screenshots || []);
+
+      setName(data.app.name);
+      setCategory(data.app.category || "Tools");
+      setAuthor(data.app.author || "Kreatiflabs");
+      setShortDesc(data.app.short_desc || "");
+      setDescription(data.app.description || "");
+      setIsPublished(Boolean(data.app.is_published));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [slug]);
+
+  const handleSaveMetadata = async () => {
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      const res = await fetch(`/api/apps/${slug}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          category,
+          author,
+          short_desc: shortDesc,
+          description,
+          is_published: isPublished ? 1 : 0,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Gagal menyimpan perubahan");
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Upload direct to Cloudflare R2
+  const uploadFileToR2 = async (file: File, folder: string) => {
+    // 1. Dapatkan presigned upload URL
+    const presignRes = await fetch("/api/upload/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type || "application/octet-stream",
+        folder,
+      }),
+    });
+
+    if (!presignRes.ok) {
+      const err = await presignRes.json();
+      throw new Error(err.error || "Gagal membuat URL upload R2");
+    }
+
+    const { uploadUrl, publicUrl } = await presignRes.json();
+
+    // 2. Upload file langsung dari browser ke Cloudflare R2
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type || "application/octet-stream",
+      },
+      body: file,
+    });
+
+    if (!uploadRes.ok) {
+      throw new Error("Gagal meng-upload file ke Cloudflare R2");
+    }
+
+    return publicUrl;
+  };
+
+  const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingIcon(true);
+      const iconUrl = await uploadFileToR2(file, `apps/${slug}/icons`);
+
+      // Update app icon_url in DB
+      await fetch(`/api/apps/${slug}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ icon_url: iconUrl }),
+      });
+
+      fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setUploadingIcon(false);
+    }
+  };
+
+  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setUploadingScreenshots(true);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const imageUrl = await uploadFileToR2(file, `apps/${slug}/screenshots`);
+
+        // Save screenshot record to DB
+        await fetch("/api/screenshots", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            app_slug: slug,
+            image_url: imageUrl,
+            order_index: screenshots.length + i,
+          }),
+        });
+      }
+
+      fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setUploadingScreenshots(false);
+    }
+  };
+
+  const handleDeleteScreenshot = async (id: string) => {
+    if (!confirm("Hapus screenshot ini?")) return;
+    try {
+      await fetch(`/api/screenshots?id=${id}`, { method: "DELETE" });
+      fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleToggleReleaseStatus = async (rel: ReleaseItem) => {
+    const newStatus = rel.status === "published" ? "draft" : "published";
+    try {
+      await fetch(`/api/releases/${rel.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteRelease = async (id: string) => {
+    if (!confirm("Hapus versi rilis ini?")) return;
+    try {
+      await fetch(`/api/releases/${id}`, { method: "DELETE" });
+      fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteApp = async () => {
+    if (
+      !confirm(
+        `PERINGATAN: Hapus aplikasi '${app?.name}' beserta semua screenshot dan rilisnya?`
+      )
+    ) {
+      return;
+    }
+    try {
+      await fetch(`/api/apps/${slug}`, { method: "DELETE" });
+      router.push("/admin");
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500 font-sans">
+        Memuat data aplikasi...
+      </div>
+    );
+  }
+
+  if (!app) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-300 font-sans gap-4">
+        <p>Aplikasi tidak ditemukan.</p>
+        <Link href="/admin" className="text-indigo-400 text-sm hover:underline">
+          Kembali ke Admin
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
+      {/* Header */}
+      <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin"
+              className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+            <div>
+              <h1 className="font-bold text-sm text-white sm:text-base">{app.name}</h1>
+              <span className="text-[11px] text-slate-400 font-mono">/{app.slug}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {isPublished ? (
+              <Link
+                href={`/apps/${app.slug}`}
+                target="_blank"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 text-slate-300 hover:text-white text-xs font-medium transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> Lihat di Store
+              </Link>
+            ) : null}
+
+            <button
+              onClick={handleSaveMetadata}
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-colors shadow-sm disabled:opacity-50"
+            >
+              {saveSuccess ? (
+                <>
+                  <CheckCircle className="w-4 h-4 text-emerald-300" /> Tersimpan!
+                </>
+              ) : saving ? (
+                "Menyimpan..."
+              ) : (
+                <>
+                  <Save className="w-4 h-4" /> Simpan Pengaturan
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-10">
+        {/* App Info & Icon */}
+        <section className="p-6 sm:p-8 rounded-3xl border border-slate-800 bg-slate-900/40 space-y-6">
+          <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            <ImageIcon className="w-5 h-5 text-indigo-400" /> Informasi Utama & Ikon
+          </h2>
+
+          <div className="flex flex-col sm:flex-row gap-6 items-start">
+            {/* Icon Uploader */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="relative group w-24 h-24 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 flex items-center justify-center">
+                {app.icon_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={app.icon_url}
+                    alt={app.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-slate-500">
+                    {app.name.slice(0, 2).toUpperCase()}
+                  </span>
+                )}
+                {uploadingIcon && (
+                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-xs text-white">
+                    Uploading...
+                  </div>
+                )}
+              </div>
+
+              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold text-slate-300 transition-colors border border-slate-700">
+                <Upload className="w-3 h-3" /> Ganti Icon
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleIconUpload}
+                  disabled={uploadingIcon}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Inputs */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+              <div>
+                <label className="text-xs font-medium text-slate-300 block mb-1">
+                  Nama Aplikasi
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-slate-300 block mb-1">Kategori</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="Tools">Tools</option>
+                  <option value="Productivity">Productivity</option>
+                  <option value="Business">Business</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Communication">Communication</option>
+                  <option value="Entertainment">Entertainment</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-slate-300 block mb-1">Author / Pembuat</label>
+                <input
+                  type="text"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-slate-300 block mb-1">Status Publikasi</label>
+                <button
+                  type="button"
+                  onClick={() => setIsPublished(!isPublished)}
+                  className={`w-full px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center justify-between border transition-colors ${
+                    isPublished
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                      : "bg-slate-950 border-slate-800 text-slate-400"
+                  }`}
+                >
+                  <span>{isPublished ? "Published (Tampil di Store)" : "Draft (Tersembunyi)"}</span>
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                      isPublished ? "bg-emerald-500 border-emerald-400" : "border-slate-600"
+                    }`}
+                  >
+                    {isPublished && <Check className="w-3 h-3 text-slate-950 stroke-[3]" />}
+                  </div>
+                </button>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-xs font-medium text-slate-300 block mb-1">
+                  Deskripsi Singkat (1-2 kalimat)
+                </label>
+                <input
+                  type="text"
+                  value={shortDesc}
+                  onChange={(e) => setShortDesc(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-xs font-medium text-slate-300 block mb-1">
+                  Deskripsi Lengkap / Fitur Utama
+                </label>
+                <textarea
+                  rows={4}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Jelaskan fitur-fitur aplikasi secara lengkap..."
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Screenshots Manager (Cloudflare R2 Direct Upload) */}
+        <section className="p-6 sm:p-8 rounded-3xl border border-slate-800 bg-slate-900/40 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                <Layers className="w-5 h-5 text-indigo-400" /> Screenshot Aplikasi (Cloudflare R2)
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Gambar langsung di-upload ke bucket Cloudflare R2 tanpa membebani server Vercel.
+              </p>
+            </div>
+
+            <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors border border-slate-700">
+              <Upload className="w-3.5 h-3.5" />
+              {uploadingScreenshots ? "Mengunggah..." : "Upload Screenshot Baru"}
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleScreenshotUpload}
+                disabled={uploadingScreenshots}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {screenshots.length === 0 ? (
+            <div className="p-8 rounded-2xl border border-dashed border-slate-800 text-center text-xs text-slate-500">
+              Belum ada screenshot yang di-upload. Klik tombol di atas untuk menambah screenshot.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
+              {screenshots.map((ss) => (
+                <div
+                  key={ss.id}
+                  className="group relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 aspect-[9/16] shadow-md"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={ss.image_url}
+                    alt="Screenshot"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteScreenshot(ss.id)}
+                      className="p-2 rounded-xl bg-red-600 hover:bg-red-500 text-white transition-colors"
+                      title="Hapus Screenshot"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Releases Manager */}
+        <section className="p-6 sm:p-8 rounded-3xl border border-slate-800 bg-slate-900/40 space-y-6">
+          <div>
+            <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              <Smartphone className="w-5 h-5 text-indigo-400" /> Rilis APK & iOS (GitHub Actions & R2)
+            </h2>
+            <p className="text-xs text-slate-400 mt-1">
+              Build dari GitHub Actions akan otomatis masuk ke sini sebagai &apos;Draft&apos;. Klik toggle untuk mempublikasikan.
+            </p>
+          </div>
+
+          {releases.length === 0 ? (
+            <div className="p-8 rounded-2xl border border-dashed border-slate-800 text-center text-xs text-slate-500">
+              Belum ada build rilis yang masuk untuk slug <span className="font-mono text-indigo-300">`{slug}`</span>.
+              Jalankan GitHub Actions workflow untuk meng-upload file build pertama.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {releases.map((rel) => (
+                <div
+                  key={rel.id}
+                  className="p-5 rounded-2xl border border-slate-800 bg-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white">v{rel.version}</span>
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 flex items-center gap-1">
+                        {rel.platform === "android" ? <Smartphone className="w-3 h-3" /> : <Apple className="w-3 h-3" />}
+                        {rel.platform}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Build #{rel.build_number} • {new Date(rel.created_at).toLocaleString()}
+                      </span>
+                    </div>
+
+                    {rel.changelog && (
+                      <p className="text-xs text-slate-400 line-clamp-2 mt-1">{rel.changelog}</p>
+                    )}
+
+                    <div className="text-[11px] font-mono text-indigo-400/80 truncate max-w-lg mt-1">
+                      {rel.download_url}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleToggleReleaseStatus(rel)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                        rel.status === "published"
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                          : "bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+                      }`}
+                    >
+                      {rel.status === "published" ? "Published (Aktif)" : "Draft (Klik to Publish)"}
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteRelease(rel.id)}
+                      className="p-2 rounded-xl border border-slate-800 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      title="Hapus Rilis"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Danger Zone */}
+        <section className="p-6 rounded-3xl border border-red-500/20 bg-red-500/5 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-red-400">Hapus Aplikasi</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Menghapus aplikasi ini dari katalog beserta seluruh riwayat rilis dan screenshot.
+            </p>
+          </div>
+          <button
+            onClick={handleDeleteApp}
+            className="px-4 py-2 rounded-xl bg-red-600/20 border border-red-500/30 text-red-400 hover:bg-red-600 hover:text-white text-xs font-semibold transition-colors"
+          >
+            Hapus Aplikasi
+          </button>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+export default function AdminAppDetailPage() {
+  return (
+    <AdminAuthGuard>
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500 font-sans">
+            Memuat halaman admin...
+          </div>
+        }
+      >
+        <AdminAppDetailContent />
+      </Suspense>
+    </AdminAuthGuard>
+  );
+}

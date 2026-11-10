@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+    <linearGradient id="glyph-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e0e7ff" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#4f46e5" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded box -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bg-grad)" filter="url(#shadow)" />
+
+  <!-- Inner border glow -->
+  <rect x="9" y="9" width="110" height="110" rx="27" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
+
+  <!-- Modern Stylized 'K' + Store Bag / Spark Icon -->
+  <!-- Vertical pillar of K -->
+  <rect x="34" y="34" width="14" height="60" rx="7" fill="url(#glyph-grad)" />
+
+  <!-- Diagonal upper arm of K -->
+  <path d="M 48 64 L 78 37 C 81 34 87 37 86 42 L 64 64 Z" fill="url(#glyph-grad)" />
+
+  <!-- Diagonal lower leg of K with spark accent -->
+  <path d="M 58 59 L 88 89 C 91 92 88 97 83 97 L 70 97 C 67 97 64 95 62 93 L 46 73 Z" fill="url(#glyph-grad)" />
+
+  <!-- Little sparkle star -->
+  <circle cx="94" cy="36" r="5" fill="#fbcfe8" />
+</svg>
