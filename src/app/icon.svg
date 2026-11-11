@@ -1,35 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
   <defs>
-    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#6366f1" />
-      <stop offset="50%" stop-color="#4f46e5" />
-      <stop offset="100%" stop-color="#7c3aed" />
+    <!-- Modern App Store Style Gradient -->
+    <linearGradient id="appstore-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="40%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#4f46e5" />
     </linearGradient>
-    <linearGradient id="glyph-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+
+    <!-- Clean White Rods -->
+    <linearGradient id="rod-grad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#ffffff" />
-      <stop offset="100%" stop-color="#e0e7ff" />
+      <stop offset="100%" stop-color="#e2e8f0" />
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#4f46e5" flood-opacity="0.4" />
+
+    <!-- Drop Shadow for layered rods -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.35" />
     </filter>
   </defs>
 
-  <!-- Background rounded box -->
-  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bg-grad)" filter="url(#shadow)" />
+  <!-- App Store Iconic Squircle -->
+  <rect x="6" y="6" width="116" height="116" rx="27" fill="url(#appstore-bg)" />
 
-  <!-- Inner border glow -->
-  <rect x="9" y="9" width="110" height="110" rx="27" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2" />
+  <!-- Inner subtle border glow -->
+  <rect x="7" y="7" width="114" height="114" rx="26" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" />
 
-  <!-- Modern Stylized 'K' + Store Bag / Spark Icon -->
-  <!-- Vertical pillar of K -->
-  <rect x="34" y="34" width="14" height="60" rx="7" fill="url(#glyph-grad)" />
+  <!-- App Store inspired Geometric Glyph forming the iconic "1" / "ONE STORE" -->
+  <!-- Vertical main pillar of "1" -->
+  <rect x="57" y="28" width="14" height="72" rx="7" fill="url(#rod-grad)" filter="url(#shadow)" />
 
-  <!-- Diagonal upper arm of K -->
-  <path d="M 48 64 L 78 37 C 81 34 87 37 86 42 L 64 64 Z" fill="url(#glyph-grad)" />
+  <!-- Diagonal flag of "1" crossing in classic App Store layered style -->
+  <path d="M 64 35 L 36 53 C 32 55 32 61 36 63 C 40 65 46 63 49 59 L 64 49 Z" fill="url(#rod-grad)" filter="url(#shadow)" />
 
-  <!-- Diagonal lower leg of K with spark accent -->
-  <path d="M 58 59 L 88 89 C 91 92 88 97 83 97 L 70 97 C 67 97 64 95 62 93 L 46 73 Z" fill="url(#glyph-grad)" />
+  <!-- Horizontal baseline rod crossing the bottom -->
+  <rect x="36" y="86" width="56" height="13" rx="6.5" fill="url(#rod-grad)" filter="url(#shadow)" />
 
-  <!-- Little sparkle star -->
-  <circle cx="94" cy="36" r="5" fill="#fbcfe8" />
+  <!-- Subtle star sparkle dot at upper right corner -->
+  <circle cx="92" cy="35" r="4.5" fill="#ffffff" opacity="0.9" />
 </svg>

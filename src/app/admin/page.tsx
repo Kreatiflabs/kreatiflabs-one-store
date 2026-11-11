@@ -120,14 +120,17 @@ export default function AdminPage() {
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/icon.svg"
-                alt="Logo"
-                className="w-8 h-8 rounded-lg shadow-sm"
+                alt="One Store Logo"
+                className="w-8 h-8 rounded-xl shadow-md shadow-blue-500/20"
               />
-              <h1 className="font-bold text-base text-white">Kreatiflabs One Store Admin</h1>
+              <div>
+                <h1 className="font-extrabold text-sm text-white leading-tight">One Store</h1>
+                <span className="text-[10px] uppercase font-semibold text-indigo-400">Admin Dashboard</span>
+              </div>
             </div>
           </div>
 

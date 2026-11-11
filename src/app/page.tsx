@@ -38,27 +38,18 @@ export default async function HomePage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/icon.svg"
-              alt="Kreatiflabs One Store"
-              className="w-10 h-10 rounded-xl shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform"
+              alt="One Store Logo"
+              className="w-10 h-10 rounded-2xl shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform"
             />
             <div>
-              <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
-                Kreatiflabs
-              </span>
-              <span className="text-xs uppercase tracking-wider text-indigo-400 block font-semibold">
+              <span className="font-extrabold text-xl tracking-tight text-white block leading-tight">
                 One Store
+              </span>
+              <span className="text-[11px] uppercase tracking-wider text-indigo-400 block font-semibold">
+                Kreatiflabs
               </span>
             </div>
           </Link>
-
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin"
-              className="text-xs font-medium px-3.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors"
-            >
-              Admin Dashboard
-            </Link>
-          </div>
         </div>
       </header>
 
@@ -68,13 +59,13 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-6">
             <ShieldCheck className="w-3.5 h-3.5" />
-            Direct Builds from GitHub Actions & Cloudflare R2
+            Official App Distribution Platform
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight">
-            Distribusi Aplikasi Mobile <span className="text-indigo-400">Kreatiflabs</span>
+            Distribusi Aplikasi Mobile <span className="text-blue-400">One Store</span>
           </h1>
           <p className="mt-4 text-base sm:text-lg text-slate-400 max-w-2xl mx-auto">
-            Katalog aplikasi internal dan rilis resmi Android (APK) & iOS. Diunduh langsung berkecepatan tinggi tanpa perantara.
+            Katalog aplikasi resmi Android (APK) &amp; iOS karya tim Kreatiflabs. Diunduh langsung berkecepatan tinggi tanpa perantara.
           </p>
         </div>
       </section>
@@ -95,14 +86,8 @@ export default async function HomePage() {
             <Layers className="w-12 h-12 text-slate-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-300">Belum ada aplikasi yang dipublish</h3>
             <p className="text-sm text-slate-500 max-w-md mx-auto mt-2">
-              Aplikasi yang di-build oleh GitHub Actions atau dibuat melalui halaman Admin akan muncul di sini setelah statusnya &apos;Published&apos;.
+              Nantikan rilis aplikasi resmi terbaru dari Kreatiflabs di sini.
             </p>
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 mt-6 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-colors"
-            >
-              Buka Halaman Admin <ArrowRight className="w-4 h-4" />
-            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
