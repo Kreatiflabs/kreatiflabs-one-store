@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Kreatiflabs One Store | Distribusi Aplikasi Mobile",
-  description: "Katalog aplikasi Android APK & iOS resmi karya tim Kreatiflabs. Unduh langsung berkecepatan tinggi via Cloudflare R2.",
+  description: "Katalog aplikasi Android APK & iOS resmi karya tim Kreatiflabs. Unduh langsung berkecepatan tinggi.",
   icons: {
     icon: "/one-store-icon.png",
     apple: "/one-store-icon.png",

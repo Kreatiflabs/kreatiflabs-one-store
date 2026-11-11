@@ -298,7 +298,7 @@ export default async function AppDetailPage({
             <img src="/one-store-icon.png" alt="One Store" className="w-5 h-5 object-contain" />
             <span className="font-semibold text-slate-300">Kreatiflabs One Store</span>
           </div>
-          <p>© {new Date().getFullYear()} Kreatiflabs One Store. Hosted on Cloudflare R2 &amp; D1.</p>
+          <p>© {new Date().getFullYear()} Kreatiflabs One Store. <a href="https://www.kreatiflabs.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">www.kreatiflabs.com</a></p>
         </div>
       </footer>
     </div>

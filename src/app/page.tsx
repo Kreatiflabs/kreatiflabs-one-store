@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { executeQuery, initDatabase, type AppModel, type ReleaseModel } from "@/lib/db";
-import { ShieldCheck, Zap, Cloud, Smartphone, Download, Sparkles } from "lucide-react";
+import { ShieldCheck, Download } from "lucide-react";
 import AppCatalog from "@/components/AppCatalog";
 
 export const dynamic = "force-dynamic";
@@ -54,11 +54,15 @@ export default async function HomePage() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              R2 CDN Online
-            </span>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://www.kreatiflabs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-medium text-slate-400 hover:text-white transition-colors"
+            >
+              www.kreatiflabs.com
+            </a>
           </div>
         </div>
       </header>
@@ -86,7 +90,7 @@ export default async function HomePage() {
           </h1>
 
           <p className="mt-5 text-base sm:text-lg text-slate-300/90 max-w-2xl mx-auto leading-relaxed">
-            Pusat rilis resmi aplikasi Android (APK) &amp; iOS karya tim Kreatiflabs. 
+            Pusat rilis resmi aplikasi Android karya tim Kreatiflabs. 
             Unduh langsung berkecepatan tinggi tanpa iklan dan perantara.
           </p>
 
@@ -97,11 +101,6 @@ export default async function HomePage() {
               <span>
                 <strong className="text-white font-bold">{totalDownloads.toLocaleString("id-ID")}</strong> Total Unduhan
               </span>
-            </div>
-
-            <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 shadow-sm">
-              <Cloud className="w-4 h-4 text-sky-400" />
-              <span>Cloudflare R2 Direct CDN</span>
             </div>
 
             <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-slate-300 shadow-sm">
@@ -125,7 +124,7 @@ export default async function HomePage() {
             <img src="/one-store-icon.png" alt="One Store" className="w-5 h-5 object-contain" />
             <span className="font-semibold text-slate-300">Kreatiflabs One Store</span>
           </div>
-          <p>© {new Date().getFullYear()} Kreatiflabs One Store. Powered by Cloudflare R2 &amp; D1.</p>
+          <p>© {new Date().getFullYear()} Kreatiflabs One Store. <a href="https://www.kreatiflabs.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">www.kreatiflabs.com</a></p>
         </div>
       </footer>
     </div>

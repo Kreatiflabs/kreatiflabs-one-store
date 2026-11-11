@@ -167,7 +167,7 @@ export default function AppCatalog({
             </span>
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Diunduh langsung secara cepat dan aman melalui jaringan Cloudflare R2 CDN.
+            Diunduh langsung secara cepat dan aman untuk perangkat Android &amp; iOS.
           </p>
         </div>
 
