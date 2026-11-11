@@ -576,7 +576,6 @@ function AdminAppDetailContent() {
                   <img
                     src={getSafeImageUrl(app.icon_url)}
                     alt={app.name}
-                    crossOrigin="anonymous"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -780,7 +779,6 @@ function AdminAppDetailContent() {
                   <img
                     src={getSafeImageUrl(ss.image_url)}
                     alt="Screenshot"
-                    crossOrigin="anonymous"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">

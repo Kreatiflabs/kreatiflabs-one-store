@@ -101,7 +101,6 @@ export default async function AppDetailPage({
               <img
                 src={getSafeImageUrl(app.icon_url)}
                 alt={app.name}
-                crossOrigin="anonymous"
                 className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover bg-slate-800 shadow-xl border border-slate-700/60"
               />
             ) : (

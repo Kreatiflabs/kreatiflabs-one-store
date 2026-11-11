@@ -181,7 +181,6 @@ export default function ScreenshotGallery({
                   <img
                     src={safeUrl}
                     alt={ss.caption || `Screenshot ${idx + 1}`}
-                    crossOrigin="anonymous"
                     className="w-full h-full object-cover group-hover/item:scale-105 transition-transform duration-300 pointer-events-none"
                     loading="lazy"
                   />
@@ -257,7 +256,6 @@ export default function ScreenshotGallery({
             <img
               src={getSafeImageUrl(screenshots[selectedIdx].image_url)}
               alt="Screenshot Preview"
-              crossOrigin="anonymous"
               className="max-h-[80vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl border border-slate-800"
             />
             <div className="mt-3 flex items-center gap-3 text-xs text-slate-400">

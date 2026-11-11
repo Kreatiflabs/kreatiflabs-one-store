@@ -240,7 +240,6 @@ export default function AppCatalog({
                       <img
                         src={getSafeImageUrl(app.icon_url)}
                         alt={app.name}
-                        crossOrigin="anonymous"
                         className="w-16 h-16 rounded-2xl object-cover bg-slate-800 shadow-md border border-slate-700/50 group-hover:scale-105 transition-transform"
                       />
                     ) : (

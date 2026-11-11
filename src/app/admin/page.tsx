@@ -220,7 +220,6 @@ export default function AdminPage() {
                         <img
                           src={getSafeImageUrl(app.icon_url)}
                           alt={app.name}
-                          crossOrigin="anonymous"
                           className="w-12 h-12 rounded-xl object-cover bg-slate-800 border border-slate-700"
                         />
                       ) : (
