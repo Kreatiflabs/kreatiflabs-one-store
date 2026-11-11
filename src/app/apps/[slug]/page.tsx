@@ -228,11 +228,12 @@ export default async function AppDetailPage({
                         </h3>
                       </div>
 
-                      {rel.changelog && (
-                        <p className="text-xs text-slate-300 mt-2 whitespace-pre-line bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
-                          {rel.changelog}
-                        </p>
-                      )}
+                      {rel.changelog &&
+                        !rel.changelog.toLowerCase().startsWith("rilis file dari r2") && (
+                          <p className="text-xs text-slate-300 mt-2 whitespace-pre-line bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                            {rel.changelog}
+                          </p>
+                        )}
 
                       <div className="mt-2 flex items-center gap-4 text-[11px] text-slate-400">
                         <span className="flex items-center gap-1">

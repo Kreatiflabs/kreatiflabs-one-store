@@ -137,10 +137,6 @@ function AdminAppDetailContent() {
     if (match) {
       setRelVersion(match[1]);
     }
-
-    if (!relChangelog) {
-      setRelChangelog(`Rilis file dari R2: ${selected.key}`);
-    }
   };
 
   // Form states
