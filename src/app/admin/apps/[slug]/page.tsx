@@ -69,9 +69,17 @@ function AdminAppDetailContent() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Upload states
+  // Upload states with real-time progress
   const [uploadingIcon, setUploadingIcon] = useState(false);
+  const [iconProgress, setIconProgress] = useState(0);
+
   const [uploadingScreenshots, setUploadingScreenshots] = useState(false);
+  const [screenshotProgress, setScreenshotProgress] = useState({
+    current: 0,
+    total: 0,
+    percent: 0,
+    filename: "",
+  });
 
   // Release modal states
   const [showAddReleaseModal, setShowAddReleaseModal] = useState(false);
@@ -201,8 +209,46 @@ function AdminAppDetailContent() {
     }
   };
 
-  // Upload to Cloudflare R2 (with automatic server fallback to avoid CORS issues)
-  const uploadFileToR2 = async (file: File, folder: string) => {
+  // XHR upload helper for real-time progress events
+  const uploadWithXHR = (
+    url: string,
+    method: string,
+    body: XMLHttpRequestBodyInit,
+    headers: Record<string, string>,
+    onProgress?: (percent: number) => void
+  ): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, url);
+      Object.entries(headers).forEach(([k, v]) => {
+        xhr.setRequestHeader(k, v);
+      });
+      if (xhr.upload && onProgress) {
+        xhr.upload.onprogress = (evt) => {
+          if (evt.lengthComputable) {
+            const p = Math.round((evt.loaded / evt.total) * 100);
+            onProgress(p);
+          }
+        };
+      }
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(xhr.responseText);
+        } else {
+          reject(new Error(`Upload status ${xhr.status}: ${xhr.statusText}`));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Network Error"));
+      xhr.send(body);
+    });
+  };
+
+  // Upload to Cloudflare R2 with progress callback & automatic server fallback
+  const uploadFileToR2 = async (
+    file: File,
+    folder: string,
+    onProgress?: (percent: number) => void
+  ) => {
     // 1. Coba upload direct presigned URL terlebih dahulu
     try {
       const presignRes = await fetch("/api/upload/presign", {
@@ -217,17 +263,15 @@ function AdminAppDetailContent() {
 
       if (presignRes.ok) {
         const { uploadUrl, publicUrl } = await presignRes.json();
-        const uploadRes = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: {
-            "Content-Type": file.type || "application/octet-stream",
-          },
-          body: file,
-        });
-
-        if (uploadRes.ok) {
-          return publicUrl;
-        }
+        await uploadWithXHR(
+          uploadUrl,
+          "PUT",
+          file,
+          { "Content-Type": file.type || "application/octet-stream" },
+          onProgress
+        );
+        if (onProgress) onProgress(100);
+        return publicUrl;
       }
     } catch (presignErr) {
       console.warn("Direct upload blocked by CORS or network, falling back to server upload...", presignErr);
@@ -238,18 +282,20 @@ function AdminAppDetailContent() {
     formData.append("file", file);
     formData.append("folder", folder);
 
-    const proxyRes = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
+    const resText = await uploadWithXHR(
+      "/api/upload",
+      "POST",
+      formData,
+      {},
+      onProgress
+    );
 
-    if (!proxyRes.ok) {
-      const err = await proxyRes.json().catch(() => ({}));
-      throw new Error(err.error || "Gagal meng-upload file ke Cloudflare R2");
+    const parsed = JSON.parse(resText);
+    if (!parsed.publicUrl) {
+      throw new Error(parsed.error || "Gagal meng-upload file ke Cloudflare R2");
     }
-
-    const { publicUrl } = await proxyRes.json();
-    return publicUrl;
+    if (onProgress) onProgress(100);
+    return parsed.publicUrl;
   };
 
   const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -258,7 +304,12 @@ function AdminAppDetailContent() {
 
     try {
       setUploadingIcon(true);
-      const iconUrl = await uploadFileToR2(file, `apps/${slug}/icons`);
+      setIconProgress(0);
+      const iconUrl = await uploadFileToR2(
+        file,
+        `apps/${slug}/icons`,
+        (percent) => setIconProgress(percent)
+      );
 
       // Update app icon_url in DB
       await fetch(`/api/apps/${slug}`, {
@@ -272,6 +323,7 @@ function AdminAppDetailContent() {
       alert(err.message);
     } finally {
       setUploadingIcon(false);
+      setIconProgress(0);
     }
   };
 
@@ -283,7 +335,20 @@ function AdminAppDetailContent() {
       setUploadingScreenshots(true);
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const imageUrl = await uploadFileToR2(file, `apps/${slug}/screenshots`);
+        setScreenshotProgress({
+          current: i + 1,
+          total: files.length,
+          percent: 0,
+          filename: file.name,
+        });
+
+        const imageUrl = await uploadFileToR2(
+          file,
+          `apps/${slug}/screenshots`,
+          (percent) => {
+            setScreenshotProgress((prev) => ({ ...prev, percent }));
+          }
+        );
 
         // Save screenshot record to DB
         await fetch("/api/screenshots", {
@@ -302,6 +367,7 @@ function AdminAppDetailContent() {
       alert(err.message);
     } finally {
       setUploadingScreenshots(false);
+      setScreenshotProgress({ current: 0, total: 0, percent: 0, filename: "" });
     }
   };
 
@@ -322,13 +388,18 @@ function AdminAppDetailContent() {
     try {
       setUploadingApk(true);
       setUploadingApkProgress(
-        `Mengunggah ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB) ke Cloudflare R2...`
+        `Mengunggah ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB): 0%...`
       );
       setRelFileSize(file.size);
 
       const uploadedUrl = await uploadFileToR2(
         file,
-        `releases/${slug}/v${relVersion || "1.0.0"}`
+        `releases/${slug}/v${relVersion || "1.0.0"}`,
+        (percent) => {
+          setUploadingApkProgress(
+            `Mengunggah ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB): ${percent}%...`
+          );
+        }
       );
       setRelDownloadUrl(uploadedUrl);
       setUploadingApkProgress("Berhasil diunggah ke Cloudflare R2!");
@@ -502,7 +573,7 @@ function AdminAppDetailContent() {
           <div className="flex flex-col sm:flex-row gap-6 items-start">
             {/* Icon Uploader */}
             <div className="flex flex-col items-center gap-2">
-              <div className="relative group w-24 h-24 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 flex items-center justify-center">
+              <div className="relative group w-24 h-24 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg">
                 {app.icon_url ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
@@ -515,15 +586,26 @@ function AdminAppDetailContent() {
                     {app.name.slice(0, 2).toUpperCase()}
                   </span>
                 )}
+
+                {/* Progress Overlay */}
                 {uploadingIcon && (
-                  <div className="absolute inset-0 bg-black/70 flex items-center justify-center text-xs text-white">
-                    Uploading...
+                  <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center p-2.5 text-center">
+                    <span className="text-[11px] font-bold text-blue-400 mb-1">
+                      {iconProgress}%
+                    </span>
+                    <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden border border-slate-700">
+                      <div
+                        className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full transition-all duration-150 rounded-full"
+                        style={{ width: `${iconProgress}%` }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
 
               <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold text-slate-300 transition-colors border border-slate-700">
-                <Upload className="w-3 h-3" /> Ganti Icon
+                <Upload className="w-3 h-3" />
+                {uploadingIcon ? `Mengunggah (${iconProgress}%)` : "Ganti Icon"}
                 <input
                   type="file"
                   accept="image/*"
@@ -649,7 +731,9 @@ function AdminAppDetailContent() {
 
             <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition-colors border border-slate-700">
               <Upload className="w-3.5 h-3.5" />
-              {uploadingScreenshots ? "Mengunggah..." : "Upload Screenshot Baru"}
+              {uploadingScreenshots
+                ? `Mengunggah (${screenshotProgress.current}/${screenshotProgress.total})...`
+                : "Upload Screenshot Baru"}
               <input
                 type="file"
                 multiple
@@ -660,6 +744,28 @@ function AdminAppDetailContent() {
               />
             </label>
           </div>
+
+          {/* Real-time Progress Bar for Screenshots Upload */}
+          {uploadingScreenshots && (
+            <div className="p-4 rounded-2xl bg-blue-950/40 border border-blue-500/30 text-white space-y-2.5 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-blue-300 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                  Mengunggah screenshot {screenshotProgress.current} dari {screenshotProgress.total}:{" "}
+                  <span className="font-mono text-slate-300 truncate max-w-xs">{screenshotProgress.filename}</span>
+                </span>
+                <span className="font-bold text-blue-400 font-mono text-sm">
+                  {screenshotProgress.percent}%
+                </span>
+              </div>
+              <div className="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-blue-500/20 p-0.5">
+                <div
+                  className="bg-gradient-to-r from-blue-500 via-sky-400 to-emerald-400 h-full transition-all duration-150 rounded-full"
+                  style={{ width: `${screenshotProgress.percent}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           {screenshots.length === 0 ? (
             <div className="p-8 rounded-2xl border border-dashed border-slate-800 text-center text-xs text-slate-500">
