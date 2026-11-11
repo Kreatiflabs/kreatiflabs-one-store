@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, ArrowLeft, RefreshCw, Smartphone, Apple, ExternalLink, Settings, Sparkles, LogOut } from "lucide-react";
+import { Plus, ArrowLeft, RefreshCw, Smartphone, Apple, ExternalLink, Settings, Sparkles, LogOut, Search } from "lucide-react";
 import { AdminAuthGuard } from "@/components/AdminAuthGuard";
 
 interface AppItem {
@@ -19,8 +19,20 @@ interface AppItem {
 export default function AdminPage() {
   const [apps, setApps] = useState<AppItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  const filteredApps = apps.filter((a) => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      a.name.toLowerCase().includes(q) ||
+      a.slug.toLowerCase().includes(q) ||
+      a.category.toLowerCase().includes(q) ||
+      a.short_desc.toLowerCase().includes(q)
+    );
+  });
 
   // Form state
   const [formName, setFormName] = useState("");
@@ -155,6 +167,17 @@ export default function AdminPage() {
               Kelola aplikasi, upload screenshot ke Cloudflare R2, dan publikasikan rilis APK/iOS.
             </p>
           </div>
+
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+            <input
+              type="text"
+              placeholder="Cari aplikasi atau kategori..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+            />
+          </div>
         </div>
 
         {loading ? (
@@ -172,9 +195,13 @@ export default function AdminPage() {
               Buat Aplikasi Pertama
             </button>
           </div>
+        ) : filteredApps.length === 0 ? (
+          <div className="p-8 rounded-2xl border border-slate-800 bg-slate-900/30 text-center text-xs text-slate-400">
+            Tidak ada aplikasi yang cocok dengan pencarian &quot;{searchQuery}&quot;.
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {apps.map((app) => (
+            {filteredApps.map((app) => (
               <div
                 key={app.id}
                 className="p-6 rounded-2xl border border-slate-800 bg-slate-900/50 flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors"

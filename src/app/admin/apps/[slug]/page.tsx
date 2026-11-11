@@ -19,6 +19,7 @@ import {
   Plus,
   Package,
   HardDrive,
+  Search,
 } from "lucide-react";
 
 interface AppDetail {
@@ -88,6 +89,11 @@ function AdminAppDetailContent() {
   // R2 bucket files
   const [r2Files, setR2Files] = useState<Array<{ key: string; size: number; url: string }>>([]);
   const [loadingR2Files, setLoadingR2Files] = useState(false);
+  const [r2Search, setR2Search] = useState("");
+
+  const filteredR2Files = r2Files.filter((f) =>
+    f.key.toLowerCase().includes(r2Search.toLowerCase().trim())
+  );
 
   const fetchR2Files = async () => {
     try {
@@ -835,7 +841,7 @@ function AdminAppDetailContent() {
                 </div>
 
                 {/* R2 Dropdown Selector */}
-                <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/70 space-y-2">
+                <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/70 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
                       <HardDrive className="w-3.5 h-3.5" /> Pilih dari File R2 yang Sudah Ada:
@@ -849,14 +855,26 @@ function AdminAppDetailContent() {
                     </button>
                   </div>
 
+                  {/* Search box for R2 files */}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Cari file R2 (misal: alquran, arm64, 1.0.1)..."
+                      value={r2Search}
+                      onChange={(e) => setR2Search(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 text-white text-xs placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
                   <select
                     onChange={(e) => handleSelectR2File(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-indigo-500 font-mono"
                   >
                     <option value="">
-                      -- {loadingR2Files ? "Sedang memuat file R2..." : `Pilih File dari R2 (${r2Files.length} file ditemukan)`} --
+                      -- {loadingR2Files ? "Sedang memuat file R2..." : filteredR2Files.length === 0 ? "Tidak ada file yang cocok dengan pencarian" : `Pilih File dari R2 (${filteredR2Files.length} file ditemukan)`} --
                     </option>
-                    {r2Files.map((f) => (
+                    {filteredR2Files.map((f) => (
                       <option key={f.key} value={f.key}>
                         {f.key} ({(f.size / (1024 * 1024)).toFixed(1)} MB)
                       </option>
