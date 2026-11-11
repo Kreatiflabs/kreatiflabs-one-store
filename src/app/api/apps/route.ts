@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       short_desc = "",
       description = "",
       author = "Kreatiflabs",
+      download_count = 0,
       is_published = 0,
     } = body;
 
@@ -64,8 +65,8 @@ export async function POST(req: Request) {
     const now = new Date().toISOString();
 
     await executeQuery(
-      `INSERT INTO apps (id, slug, name, icon_url, category, short_desc, description, author, is_published, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO apps (id, slug, name, icon_url, category, short_desc, description, author, download_count, is_published, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         cleanSlug,
@@ -75,6 +76,7 @@ export async function POST(req: Request) {
         short_desc,
         description,
         author,
+        typeof download_count === "number" ? download_count : parseInt(download_count, 10) || 0,
         is_published ? 1 : 0,
         now,
         now,

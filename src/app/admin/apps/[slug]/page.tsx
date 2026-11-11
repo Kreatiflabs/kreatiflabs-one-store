@@ -31,6 +31,7 @@ interface AppDetail {
   short_desc: string;
   description: string;
   author: string;
+  download_count?: number;
   is_published: number;
 }
 
@@ -139,6 +140,7 @@ function AdminAppDetailContent() {
   const [author, setAuthor] = useState("Kreatiflabs");
   const [shortDesc, setShortDesc] = useState("");
   const [description, setDescription] = useState("");
+  const [downloadCount, setDownloadCount] = useState(0);
   const [isPublished, setIsPublished] = useState(false);
 
   const fetchData = async () => {
@@ -157,6 +159,7 @@ function AdminAppDetailContent() {
       setAuthor(data.app.author || "Kreatiflabs");
       setShortDesc(data.app.short_desc || "");
       setDescription(data.app.description || "");
+      setDownloadCount(data.app.download_count || 0);
       setIsPublished(Boolean(data.app.is_published));
     } catch (err) {
       console.error(err);
@@ -182,6 +185,7 @@ function AdminAppDetailContent() {
           author,
           short_desc: shortDesc,
           description,
+          download_count: downloadCount,
           is_published: isPublished ? 1 : 0,
         }),
       });
@@ -551,6 +555,17 @@ function AdminAppDetailContent() {
                   type="text"
                   value={author}
                   onChange={(e) => setAuthor(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-slate-300 block mb-1">Jumlah Download (Display Counter)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={downloadCount}
+                  onChange={(e) => setDownloadCount(parseInt(e.target.value, 10) || 0)}
                   className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"
                 />
               </div>

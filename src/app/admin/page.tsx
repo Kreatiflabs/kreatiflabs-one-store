@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, ArrowLeft, RefreshCw, Smartphone, Apple, ExternalLink, Settings, Sparkles, LogOut, Search } from "lucide-react";
+import { Plus, ArrowLeft, RefreshCw, Smartphone, Apple, ExternalLink, Settings, Sparkles, LogOut, Search, Download } from "lucide-react";
 import { AdminAuthGuard } from "@/components/AdminAuthGuard";
 
 interface AppItem {
@@ -12,6 +12,7 @@ interface AppItem {
   icon_url: string;
   category: string;
   short_desc: string;
+  download_count?: number;
   is_published: number;
   updated_at: string;
 }
@@ -248,9 +249,14 @@ export default function AdminPage() {
                 </div>
 
                 <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
-                    {app.category}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-500 uppercase tracking-wider font-semibold">
+                      {app.category}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                      <Download className="w-3 h-3" /> {(app.download_count || 0).toLocaleString("id-ID")}
+                    </span>
+                  </div>
 
                   <div className="flex items-center gap-2">
                     {app.is_published ? (

@@ -67,6 +67,7 @@ export async function PUT(
       short_desc,
       description,
       author,
+      download_count,
       is_published,
     } = body;
 
@@ -80,6 +81,7 @@ export async function PUT(
            short_desc = COALESCE(?, short_desc),
            description = COALESCE(?, description),
            author = COALESCE(?, author),
+           download_count = COALESCE(?, download_count),
            is_published = COALESCE(?, is_published),
            updated_at = ?
        WHERE slug = ?`,
@@ -90,6 +92,7 @@ export async function PUT(
         short_desc ?? null,
         description ?? null,
         author ?? null,
+        typeof download_count === "number" ? download_count : (download_count ? parseInt(download_count, 10) : null),
         typeof is_published === "boolean" ? (is_published ? 1 : 0) : (is_published ?? null),
         now,
         slug,

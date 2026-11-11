@@ -10,6 +10,7 @@ export interface AppModel {
   short_desc: string;
   description: string;
   author: string;
+  download_count: number;
   is_published: number; // 0 or 1
   created_at: string;
   updated_at: string;
@@ -25,6 +26,7 @@ export interface ReleaseModel {
   manifest_url: string;
   changelog: string;
   file_size_bytes: number;
+  download_count: number;
   status: "draft" | "published";
   created_at: string;
 }
@@ -89,6 +91,7 @@ export async function initDatabase(): Promise<void> {
       short_desc TEXT DEFAULT '',
       description TEXT DEFAULT '',
       author TEXT DEFAULT 'Kreatiflabs',
+      download_count INTEGER DEFAULT 0,
       is_published INTEGER DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -103,6 +106,7 @@ export async function initDatabase(): Promise<void> {
       manifest_url TEXT DEFAULT '',
       changelog TEXT DEFAULT '',
       file_size_bytes INTEGER DEFAULT 0,
+      download_count INTEGER DEFAULT 0,
       status TEXT DEFAULT 'draft',
       created_at TEXT NOT NULL
     );`,
