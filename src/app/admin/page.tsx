@@ -127,9 +127,10 @@ export default function AdminPage() {
                 alt="One Store Logo"
                 className="w-8 h-8 rounded-xl shadow-md shadow-blue-500/20"
               />
-              <div>
-                <h1 className="font-extrabold text-sm text-white leading-tight">One Store</h1>
-                <span className="text-[10px] uppercase font-semibold text-indigo-400">Admin Dashboard</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-base text-white">Kreatiflabs</span>
+                <span className="font-bold text-base text-blue-400">One Store</span>
+                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-slate-800 text-indigo-300 ml-1 border border-slate-700">Admin</span>
               </div>
             </div>
           </div>

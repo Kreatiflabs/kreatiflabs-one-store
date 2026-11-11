@@ -41,12 +41,12 @@ export default async function HomePage() {
               alt="One Store Logo"
               className="w-10 h-10 rounded-2xl shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform"
             />
-            <div>
-              <span className="font-extrabold text-xl tracking-tight text-white block leading-tight">
-                One Store
-              </span>
-              <span className="text-[11px] uppercase tracking-wider text-indigo-400 block font-semibold">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-xl tracking-tight text-white group-hover:text-slate-200 transition-colors">
                 Kreatiflabs
+              </span>
+              <span className="font-bold text-xl tracking-tight text-blue-400">
+                One Store
               </span>
             </div>
           </Link>
@@ -170,7 +170,7 @@ export default async function HomePage() {
       {/* Footer */}
       <footer className="border-t border-slate-900 py-8 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4">
-          <p>© {new Date().getFullYear()} Kreatiflabs One Store. Hosted on Vercel & Powered by Cloudflare R2 + D1.</p>
+          <p>© {new Date().getFullYear()} Kreatiflabs One Store.</p>
         </div>
       </footer>
     </div>

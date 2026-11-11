@@ -72,12 +72,11 @@ export default async function AppDetailPage({
             <ArrowLeft className="w-4 h-4" />
             Kembali ke Katalog
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icon.svg" alt="One Store" className="w-5 h-5 rounded-md" />
-            <span className="text-xs font-bold text-white uppercase tracking-wider">
-              One Store
-            </span>
+            <span className="text-xs font-bold text-white">Kreatiflabs</span>
+            <span className="text-xs font-bold text-blue-400">One Store</span>
           </div>
         </div>
       </header>
