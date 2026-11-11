@@ -61,3 +61,33 @@ export async function createPresignedUploadUrl(
 
   return { uploadUrl, publicUrl };
 }
+
+/**
+ * Server-side direct upload to R2 (bypasses browser CORS completely)
+ */
+export async function uploadBufferToR2(
+  key: string,
+  buffer: Buffer | Uint8Array,
+  contentType: string
+): Promise<{ key: string; publicUrl: string }> {
+  const client = getR2Client();
+  const bucket = getR2BucketName();
+
+  if (!client) {
+    throw new Error(
+      "Cloudflare R2 is not configured. Please set CLOUDFLARE_ACCOUNT_ID, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY."
+    );
+  }
+
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    Body: buffer,
+    ContentType: contentType,
+  });
+
+  await client.send(command);
+  const publicUrl = `${getR2PublicDomain()}/${key}`;
+
+  return { key, publicUrl };
+}

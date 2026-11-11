@@ -201,39 +201,54 @@ function AdminAppDetailContent() {
     }
   };
 
-  // Upload direct to Cloudflare R2
+  // Upload to Cloudflare R2 (with automatic server fallback to avoid CORS issues)
   const uploadFileToR2 = async (file: File, folder: string) => {
-    // 1. Dapatkan presigned upload URL
-    const presignRes = await fetch("/api/upload/presign", {
+    // 1. Coba upload direct presigned URL terlebih dahulu
+    try {
+      const presignRes = await fetch("/api/upload/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type || "application/octet-stream",
+          folder,
+        }),
+      });
+
+      if (presignRes.ok) {
+        const { uploadUrl, publicUrl } = await presignRes.json();
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+          },
+          body: file,
+        });
+
+        if (uploadRes.ok) {
+          return publicUrl;
+        }
+      }
+    } catch (presignErr) {
+      console.warn("Direct upload blocked by CORS or network, falling back to server upload...", presignErr);
+    }
+
+    // 2. Fallback: upload server-side (100% bebas dari batasan CORS browser)
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", folder);
+
+    const proxyRes = await fetch("/api/upload", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        filename: file.name,
-        contentType: file.type || "application/octet-stream",
-        folder,
-      }),
+      body: formData,
     });
 
-    if (!presignRes.ok) {
-      const err = await presignRes.json();
-      throw new Error(err.error || "Gagal membuat URL upload R2");
+    if (!proxyRes.ok) {
+      const err = await proxyRes.json().catch(() => ({}));
+      throw new Error(err.error || "Gagal meng-upload file ke Cloudflare R2");
     }
 
-    const { uploadUrl, publicUrl } = await presignRes.json();
-
-    // 2. Upload file langsung dari browser ke Cloudflare R2
-    const uploadRes = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": file.type || "application/octet-stream",
-      },
-      body: file,
-    });
-
-    if (!uploadRes.ok) {
-      throw new Error("Gagal meng-upload file ke Cloudflare R2");
-    }
-
+    const { publicUrl } = await proxyRes.json();
     return publicUrl;
   };
 
