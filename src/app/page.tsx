@@ -91,7 +91,7 @@ export default async function HomePage() {
           </h1>
 
           <p className="mt-5 text-base sm:text-lg text-slate-300/90 max-w-2xl mx-auto leading-relaxed">
-            Pusat rilis resmi aplikasi Android karya tim Kreatiflabs. 
+            Pusat rilis resmi aplikasi karya tim Kreatiflabs. 
             Unduh langsung berkecepatan tinggi tanpa iklan dan perantara.
           </p>
 
