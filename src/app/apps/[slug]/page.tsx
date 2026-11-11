@@ -20,6 +20,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import DownloadButton from "@/components/DownloadButton";
+import ScreenshotGallery from "@/components/ScreenshotGallery";
+import { getSafeImageUrl } from "@/lib/images";
 
 export const dynamic = "force-dynamic";
 
@@ -97,8 +99,9 @@ export default async function AppDetailPage({
             {app.icon_url ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
-                src={app.icon_url}
+                src={getSafeImageUrl(app.icon_url)}
                 alt={app.name}
+                crossOrigin="anonymous"
                 className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover bg-slate-800 shadow-xl border border-slate-700/60"
               />
             ) : (
@@ -170,35 +173,8 @@ export default async function AppDetailPage({
           </div>
         </div>
 
-        {/* Screenshots Section (loaded directly from Cloudflare R2) */}
-        {screenshots.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-              <Layers className="w-5 h-5 text-blue-400" /> Screenshot Aplikasi
-            </h2>
-            <div className="flex gap-4 overflow-x-auto pb-4 pt-1 snap-x no-scrollbar">
-              {screenshots.map((ss) => (
-                <div
-                  key={ss.id}
-                  className="flex-shrink-0 w-64 sm:w-72 rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 shadow-md snap-start"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={ss.image_url}
-                    alt={ss.caption || "Screenshot"}
-                    className="w-full h-auto object-cover max-h-[500px]"
-                    loading="lazy"
-                  />
-                  {ss.caption && (
-                    <div className="p-3 text-xs text-slate-400 border-t border-slate-800 text-center">
-                      {ss.caption}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Screenshots Section with Interactive Swipe, Drag & Lightbox */}
+        <ScreenshotGallery screenshots={screenshots} />
 
         {/* Description Section */}
         {app.description && (
@@ -298,7 +274,22 @@ export default async function AppDetailPage({
             <img src="/one-store-icon.png" alt="One Store" className="w-5 h-5 object-contain" />
             <span className="font-semibold text-slate-300">Kreatiflabs One Store</span>
           </div>
-          <p>© {new Date().getFullYear()} Kreatiflabs One Store. <a href="https://www.kreatiflabs.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">www.kreatiflabs.com</a></p>
+          <p>© {new Date().getFullYear()} Kreatiflabs One Store. 
+           
+            <a
+              href="https://www.kreatiflabs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 text-xs font-medium transition-all"
+            >
+              <span className="text-slate-500 text-[11px]">by</span>
+              <span className="font-semibold text-slate-200">Kreatiflabs</span>
+            </a>
+
+
+
+            
+            </p>
         </div>
       </footer>
     </div>

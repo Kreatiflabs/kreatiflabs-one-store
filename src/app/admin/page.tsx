@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Plus, ArrowLeft, RefreshCw, Smartphone, Apple, ExternalLink, Settings, Sparkles, LogOut, Search, Download } from "lucide-react";
 import { AdminAuthGuard } from "@/components/AdminAuthGuard";
+import { getSafeImageUrl } from "@/lib/images";
 
 interface AppItem {
   id: string;
@@ -217,8 +218,9 @@ export default function AdminPage() {
                       {app.icon_url ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
-                          src={app.icon_url}
+                          src={getSafeImageUrl(app.icon_url)}
                           alt={app.name}
+                          crossOrigin="anonymous"
                           className="w-12 h-12 rounded-xl object-cover bg-slate-800 border border-slate-700"
                         />
                       ) : (

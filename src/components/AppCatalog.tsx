@@ -13,6 +13,7 @@ import {
   Sparkles,
   ExternalLink,
 } from "lucide-react";
+import { getSafeImageUrl } from "@/lib/images";
 import type { AppModel, ReleaseModel } from "@/lib/db";
 
 interface AppCatalogProps {
@@ -237,8 +238,9 @@ export default function AppCatalog({
                     {app.icon_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
-                        src={app.icon_url}
+                        src={getSafeImageUrl(app.icon_url)}
                         alt={app.name}
+                        crossOrigin="anonymous"
                         className="w-16 h-16 rounded-2xl object-cover bg-slate-800 shadow-md border border-slate-700/50 group-hover:scale-105 transition-transform"
                       />
                     ) : (
