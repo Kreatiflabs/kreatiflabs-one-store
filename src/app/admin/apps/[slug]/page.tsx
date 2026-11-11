@@ -18,6 +18,7 @@ import {
   CheckCircle,
   Plus,
   Package,
+  HardDrive,
 } from "lucide-react";
 
 interface AppDetail {
@@ -83,6 +84,48 @@ function AdminAppDetailContent() {
   const [uploadingApk, setUploadingApk] = useState(false);
   const [uploadingApkProgress, setUploadingApkProgress] = useState("");
   const [creatingRelease, setCreatingRelease] = useState(false);
+
+  // R2 bucket files
+  const [r2Files, setR2Files] = useState<Array<{ key: string; size: number; url: string }>>([]);
+  const [loadingR2Files, setLoadingR2Files] = useState(false);
+
+  const fetchR2Files = async () => {
+    try {
+      setLoadingR2Files(true);
+      const res = await fetch("/api/r2/files");
+      const data = await res.json();
+      if (data.files) {
+        setR2Files(data.files);
+      }
+    } catch (err) {
+      console.error("Gagal memuat list file R2:", err);
+    } finally {
+      setLoadingR2Files(false);
+    }
+  };
+
+  const handleSelectR2File = (key: string) => {
+    const selected = r2Files.find((f) => f.key === key);
+    if (!selected) return;
+
+    setRelDownloadUrl(selected.url);
+    setRelFileSize(selected.size);
+
+    if (selected.key.toLowerCase().endsWith(".ipa")) {
+      setRelPlatform("ios");
+    } else {
+      setRelPlatform("android");
+    }
+
+    const match = selected.key.match(/(\d+\.\d+(\.\d+)?)/);
+    if (match) {
+      setRelVersion(match[1]);
+    }
+
+    if (!relChangelog) {
+      setRelChangelog(`Rilis file dari R2: ${selected.key}`);
+    }
+  };
 
   // Form states
   const [name, setName] = useState("");
@@ -628,7 +671,10 @@ function AdminAppDetailContent() {
             </div>
 
             <button
-              onClick={() => setShowAddReleaseModal(true)}
+              onClick={() => {
+                setShowAddReleaseModal(true);
+                fetchR2Files();
+              }}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors shadow-sm self-start sm:self-auto"
             >
               <Plus className="w-4 h-4" /> Tambah / Upload Rilis Manual
@@ -786,6 +832,45 @@ function AdminAppDetailContent() {
                       <option value="draft">Draft (Disembunyikan)</option>
                     </select>
                   </div>
+                </div>
+
+                {/* R2 Dropdown Selector */}
+                <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/70 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
+                      <HardDrive className="w-3.5 h-3.5" /> Pilih dari File R2 yang Sudah Ada:
+                    </label>
+                    <button
+                      type="button"
+                      onClick={fetchR2Files}
+                      className="text-[11px] text-indigo-400 hover:text-indigo-200 transition-colors"
+                    >
+                      {loadingR2Files ? "Memuat..." : "↻ Refresh List R2"}
+                    </button>
+                  </div>
+
+                  <select
+                    onChange={(e) => handleSelectR2File(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-indigo-500 font-mono"
+                  >
+                    <option value="">
+                      -- {loadingR2Files ? "Sedang memuat file R2..." : `Pilih File dari R2 (${r2Files.length} file ditemukan)`} --
+                    </option>
+                    {r2Files.map((f) => (
+                      <option key={f.key} value={f.key}>
+                        {f.key} ({(f.size / (1024 * 1024)).toFixed(1)} MB)
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[11px] text-slate-500">
+                    * Memilih file dari dropdown otomatis mengisi Download URL, versi, dan ukuran file.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 my-2 text-xs text-slate-500">
+                  <div className="flex-1 border-t border-slate-800"></div>
+                  <span>ATAU UPLOAD FILE BARU</span>
+                  <div className="flex-1 border-t border-slate-800"></div>
                 </div>
 
                 {/* File Upload to R2 Box */}
