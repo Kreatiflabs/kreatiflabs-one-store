@@ -75,7 +75,10 @@ export async function executeQuery<T = Record<string, unknown>>(
   return (res.rows as unknown) as T[];
 }
 
+let isInitialized = false;
+
 export async function initDatabase(): Promise<void> {
+  if (isInitialized) return;
   const schemaStatements = [
     `CREATE TABLE IF NOT EXISTS apps (
       id TEXT PRIMARY KEY,
@@ -116,4 +119,5 @@ export async function initDatabase(): Promise<void> {
   for (const statement of schemaStatements) {
     await executeQuery(statement);
   }
+  isInitialized = true;
 }
