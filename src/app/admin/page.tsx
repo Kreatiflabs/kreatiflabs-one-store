@@ -123,9 +123,9 @@ export default function AdminPage() {
             <div className="flex items-center gap-2.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/icon.svg"
+                src="/one-store-icon.png"
                 alt="One Store Logo"
-                className="w-8 h-8 rounded-xl shadow-md shadow-blue-500/20"
+                className="w-8 h-8 object-contain drop-shadow-sm"
               />
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-base text-white">Kreatiflabs</span>

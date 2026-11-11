@@ -37,9 +37,9 @@ export default async function HomePage() {
           <Link href="/" className="flex items-center gap-3 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/icon.svg"
-              alt="One Store Logo"
-              className="w-10 h-10 rounded-2xl shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform"
+              src="/one-store-icon.png"
+              alt="Kreatiflabs One Store Logo"
+              className="w-10 h-10 object-contain drop-shadow-md group-hover:scale-105 transition-transform"
             />
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-xl tracking-tight text-white group-hover:text-slate-200 transition-colors">

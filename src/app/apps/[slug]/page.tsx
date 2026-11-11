@@ -74,7 +74,7 @@ export default async function AppDetailPage({
           </Link>
           <div className="flex items-center gap-1.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon.svg" alt="One Store" className="w-5 h-5 rounded-md" />
+            <img src="/one-store-icon.png" alt="One Store" className="w-5 h-5 object-contain" />
             <span className="text-xs font-bold text-white">Kreatiflabs</span>
             <span className="text-xs font-bold text-blue-400">One Store</span>
           </div>
