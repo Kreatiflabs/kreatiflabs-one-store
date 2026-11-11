@@ -275,22 +275,7 @@ export default async function AppDetailPage({
             <img src="/one-store-icon.png" alt="One Store" className="w-5 h-5 object-contain" />
             <span className="font-semibold text-slate-300">Kreatiflabs One Store</span>
           </div>
-          <p>© {new Date().getFullYear()} Kreatiflabs One Store. 
-           
-            <a
-              href="https://www.kreatiflabs.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700 text-xs font-medium transition-all"
-            >
-              <span className="text-slate-500 text-[11px]">by</span>
-              <span className="font-semibold text-slate-200">Kreatiflabs</span>
-            </a>
-
-
-
-            
-            </p>
+          <p>© {new Date().getFullYear()} Kreatiflabs. All rights reserved.</p>
         </div>
       </footer>
     </div>

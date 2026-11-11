@@ -118,7 +118,7 @@ export default async function HomePage() {
             <img src="/one-store-icon.png" alt="One Store" className="w-5 h-5 object-contain" />
             <span className="font-semibold text-slate-300">Kreatiflabs One Store</span>
           </div>
-          <p>© {new Date().getFullYear()} Kreatiflabs One Store. <a href="https://www.kreatiflabs.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">www.kreatiflabs.com</a></p>
+          <p>© {new Date().getFullYear()} Kreatiflabs. All rights reserved.</p>
         </div>
       </footer>
     </div>
